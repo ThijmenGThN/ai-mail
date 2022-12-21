@@ -1,8 +1,8 @@
-// import imaps from 'imap-simple2'
 import Imap from 'imap'
+import mailer from 'nodemailer'
 import { simpleParser } from 'mailparser'
 
-const imap = new Imap({
+const compose = new Imap({
     user: process.env.IMAP_USER,
     password: process.env.IMAP_PASSWORD,
     host: process.env.IMAP_HOST,
@@ -10,30 +10,48 @@ const imap = new Imap({
     tls: true
 })
 
+const sender = mailer.createTransport({
+    host: process.env.IMAP_HOST,
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.IMAP_USER,
+        pass: process.env.IMAP_PASSWORD
+    }
+})
+
 export const fetch = async () => new Promise(async res => {
-    imap.connect()
+    compose.connect()
 
-    await imap.once('ready', () => {
-        imap.openBox('INBOX', false, async err => {
-            if (err) throw err
+    await compose.once('ready', () => {
+        compose.openBox('INBOX', false, async err => {
+            compose.search(['UNSEEN', ['TO', process.env.IMAP_RECIEVER]], (err, results) => {
+                let inbox = compose.fetch(results, { bodies: '', markSeen: true, struct: true })
 
-            imap.search(['UNSEEN', ['TO', 'ai@thijmenheuvelink.nl']], (err, results) => {
-                let inbox = imap.fetch(results, { bodies: '', markSeen: false, struct: true })
+                // compose.setFlags(results, ['\\Seen'])
 
-                imap.setFlags(results, ['\\Seen'])
-
+                let collect = []
                 inbox.on('message', m => {
                     m.on('body', stream => {
-                        simpleParser(stream, (err, { to, from, text }) => res({
-                            reciever: to.value[0].address,
+                        simpleParser(stream, (err, { from, text }) => collect.push({
                             author: from.value[0].address,
                             text
                         }))
                     })
                 })
 
-                imap.end()
+                setTimeout(() => {
+                    res(collect ? collect : [])
+                    compose.end()
+                }, 2000)
             })
         })
     })
 })
+
+export const send = async ({ from, to, subject, text }) => {
+    await sender.sendMail({
+        from: process.env.IMAP_RECIEVER,
+        to, subject, text
+    })
+}

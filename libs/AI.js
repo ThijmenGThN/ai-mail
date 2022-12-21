@@ -1,11 +1,10 @@
 import { Configuration, OpenAIApi } from "openai"
+import dialog from '../dialog.json' assert { type: "json" }
 
 const config = new Configuration({ apiKey: process.env.OPENAI_KEY })
 const openai = new OpenAIApi(config)
 
 export const compose = async function (content) {
-    const dataSheet = `A stranger has sent you an email, respond kindly and be sure to match their language:\n\n"${content}"\n\nAI: "`
-
     const gen = async prompt =>
         await openai.createCompletion({
             model: "text-davinci-003",
@@ -19,7 +18,7 @@ export const compose = async function (content) {
         })
 
     return {
-        body: ('"' + (await gen(dataSheet)).data.choices[0].text).replace(/(^"|"$)/g, ''),
-        subject: ('"' + (await gen(`Think of a subject for the following email:\n\n"${body}"\n\nAI: "`)).data.choices[0].text).replace(/(^"|"$)/g, '')
+        subject: ('"' + (await gen(`${dialog.subject}:\n\n"${content}"\n\nAI: "`)).data.choices[0].text).replace(/(^"|"$)/g, ''),
+        body: ('"' + (await gen(`${dialog.body}:\n\n"${content}"\n\nAI:`)).data.choices[0].text).replace(/(^"|"$)/g, '')
     }
 }
