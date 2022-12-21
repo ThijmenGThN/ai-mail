@@ -1,0 +1,20 @@
+{
+  "type": "module",
+  "name": "ai-mail",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon .",
+    "ci": "yarn && yarn start"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.0.3",
+    "imap-simple2": "^5.1.2",
+    "mailparser": "^3.6.2",
+    "nodemailer": "^6.8.0",
+    "nodemon": "^2.0.20",
+    "openai": "^3.1.0"
+  }
+}
